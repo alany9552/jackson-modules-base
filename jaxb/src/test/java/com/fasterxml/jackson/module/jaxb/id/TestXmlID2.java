@@ -9,7 +9,8 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.module.jaxb.BaseJaxbTest;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
-
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 public class TestXmlID2 extends BaseJaxbTest
 {
     @XmlRootElement(name = "department")
@@ -45,6 +46,7 @@ public class TestXmlID2 extends BaseJaxbTest
     
     @XmlRootElement(name = "user")
     @XmlAccessorType(XmlAccessType.FIELD)
+    @JsonPropertyOrder({ "id", "username","email","department" })
     static class User
     {
         @XmlElement @XmlID
@@ -120,13 +122,15 @@ public class TestXmlID2 extends BaseJaxbTest
         // true -> ignore XmlIDREF annotation
                 .annotationIntrospector(new JaxbAnnotationIntrospector(true))
                 .build();
-        
+
         // first, with default settings (first NOT as id)
         List<User> users = getUserList();
         String json = mapper.writeValueAsString(users);
+        
         assertEquals(expected, json);
     
         List<User> result = mapper.readValue(json, new TypeReference<List<User>>() { });
+
         assertEquals(3, result.size());
         assertEquals(Long.valueOf(11), result.get(0).id);
         assertEquals(Long.valueOf(22), result.get(1).id);
@@ -135,10 +139,8 @@ public class TestXmlID2 extends BaseJaxbTest
     
     public void testIdWithJaxbRules() throws Exception
     {
-        ObjectMapper mapper = JsonMapper.builder()
-        // but then also variant where ID is ALWAYS used for XmlID / XmlIDREF
-                .annotationIntrospector(new JaxbAnnotationIntrospector())
-                .build();
+        ObjectMapper mapper = newObjectMapper();
+
         List<User> users = getUserList();
         final String json = mapper.writeValueAsString(users);
         String expected = "[{\"id\":11,\"username\":\"11\",\"email\":\"11@test.com\",\"department\":9}"
